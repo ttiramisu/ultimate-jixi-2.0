@@ -25,11 +25,18 @@ function getScriptURL() {
 let dataCache = [];
 
 async function fetchResults() {
-  const url = getScriptURL();
-  if (!url) return [];
+  const appsScriptURL = getScriptURL();
+  if (!appsScriptURL) return [];
+
   try {
-    const res = await fetch(url);
+    const res = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appsScriptURL, payload: {} }) // GET payload is empty
+    });
+
     if (!res.ok) throw new Error(res.status);
+
     const json = await res.json();
     dataCache = json;
     renderGrid(json);
@@ -104,15 +111,20 @@ async function onVote(participantId, cardEl) {
   if (localStorage.getItem(LOCAL_VOTE_KEY)) { showToast('此装置已投过票'); return; }
   if (!confirm('确认要把你的一票投给此人吗？每个装置仅可投一次。')) return;
 
-  const url = getScriptURL();
-  if (!url) return;
+  const appsScriptURL = getScriptURL();
+  if (!appsScriptURL) return;
 
   try {
     localStorage.setItem(LOCAL_VOTE_KEY, participantId);
     renderGrid(dataCache);
 
     const payload = { participantId };
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const res = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appsScriptURL, payload })
+    });
+
     if (!res.ok) throw new Error(res.status);
 
     const j = await res.json();
