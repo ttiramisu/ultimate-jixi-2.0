@@ -1,6 +1,5 @@
 const grid = document.getElementById('grid');
 const toastEl = document.getElementById('toast');
-const refreshBtn = document.getElementById('refreshBtn');
 const voteUrl = localStorage.getItem('votePageURL') || window.location.origin + '/index.html'; // default vote page
 
 // Show toast
@@ -72,9 +71,6 @@ function generateQR() {
   const textEl = document.getElementById('voteUrlText');
   textEl.textContent = voteUrl;
 }
-
-// Refresh button
-refreshBtn.addEventListener('click', fetchResults);
 
 // Initial load
 (async () => {
