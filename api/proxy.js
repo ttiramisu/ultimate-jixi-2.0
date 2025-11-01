@@ -9,11 +9,18 @@ export default async function handler(req, res) {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: req.method,
       headers: { "Content-Type": "application/json" },
-      body: req.method === "POST" ? JSON.stringify(req.body.payload) : null,
+      body: req.method === "POST" ? JSON.stringify(req.body.payload || {}) : null,
     });
 
     const text = await response.text();
-    res.status(response.status).send(text);
+
+    try {
+      const data = JSON.parse(text);
+      res.status(response.status).json(data);
+    } catch {
+      res.status(response.status).send(text);
+    }
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Proxy error" });

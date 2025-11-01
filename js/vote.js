@@ -18,7 +18,7 @@ function shortNameToInitials(name) {
 
 function getScriptURL() {
   const url = localStorage.getItem('appsScriptURL');
-  if (!url) showToast('请先在指南页面输入 Apps Script URL');
+  if (!url) console.log('Clowner');
   return url;
 }
 
@@ -32,12 +32,21 @@ async function fetchResults() {
     const res = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appsScriptURL, payload: {} }) // GET payload is empty
+      body: JSON.stringify({ appsScriptURL, payload: {} }) // empty payload for GET
     });
 
     if (!res.ok) throw new Error(res.status);
 
     const json = await res.json();
+
+    if (!Array.isArray(json)) {
+      console.error('Unexpected response:', json);
+      showToast('数据格式错误');
+      dataCache = [];
+      renderGrid([]);
+      return [];
+    }
+
     dataCache = json;
     renderGrid(json);
     return json;
@@ -49,6 +58,7 @@ async function fetchResults() {
 }
 
 function getTotalVotes(items) {
+  if (!Array.isArray(items)) return 0;
   return items.reduce((s, i) => s + (Number(i.votes) || 0), 0);
 }
 
@@ -63,6 +73,7 @@ function renderGrid(items) {
 
     const meta = document.createElement('div');
     meta.className = 'meta';
+
     const avatar = document.createElement('div');
     avatar.className = 'avatar';
     avatar.textContent = shortNameToInitials(item.name);
