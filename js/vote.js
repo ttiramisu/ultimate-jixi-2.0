@@ -131,11 +131,6 @@ async function onVote(participantId, cardEl) {
   }
 }
 
-refreshBtn.addEventListener('click', async () => {
-  await fetchResults();
-  showToast('已更新');
-});
-
 (async () => {
   showToast('正在加载结果...');
   await fetchResults();
