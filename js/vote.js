@@ -3,6 +3,7 @@ const grid = document.getElementById('grid');
 const toastEl = document.getElementById('toast');
 const refreshBtn = document.getElementById('refreshBtn');
 
+// Show toast notification
 function showToast(msg, timeout = 2800) {
   toastEl.textContent = msg;
   toastEl.classList.add('show');
@@ -10,29 +11,30 @@ function showToast(msg, timeout = 2800) {
   toastEl._t = setTimeout(() => toastEl.classList.remove('show'), timeout);
 }
 
+// Convert name to initials for avatar
 function shortNameToInitials(name) {
   if (!name) return '?';
   name = String(name).trim();
   return name.length <= 2 ? name : name.slice(-2);
 }
 
+// Get Apps Script URL from localStorage
 function getScriptURL() {
   const url = localStorage.getItem('appsScriptURL');
-  if (!url) console.log('Clowner');
+  if (!url) showToast('请先在指南页面输入 Apps Script URL');
   return url;
 }
 
 let dataCache = [];
 
+// Fetch results from Apps Script via proxy (GET)
 async function fetchResults() {
   const appsScriptURL = getScriptURL();
   if (!appsScriptURL) return [];
 
   try {
-    const res = await fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appsScriptURL, payload: {} }) // empty payload for GET
+    const res = await fetch('/api/proxy?appsScriptURL=' + encodeURIComponent(appsScriptURL), {
+      method: 'GET',
     });
 
     if (!res.ok) throw new Error(res.status);
@@ -57,11 +59,13 @@ async function fetchResults() {
   }
 }
 
+// Compute total votes
 function getTotalVotes(items) {
   if (!Array.isArray(items)) return 0;
   return items.reduce((s, i) => s + (Number(i.votes) || 0), 0);
 }
 
+// Render voting grid
 function renderGrid(items) {
   grid.innerHTML = '';
   const total = Math.max(1, getTotalVotes(items));
@@ -114,10 +118,12 @@ function renderGrid(items) {
     card.appendChild(barWrap);
     card.appendChild(votesEl);
     card.appendChild(btn);
+
     grid.appendChild(card);
   });
 }
 
+// Handle voting (POST)
 async function onVote(participantId, cardEl) {
   if (localStorage.getItem(LOCAL_VOTE_KEY)) { showToast('此装置已投过票'); return; }
   if (!confirm('确认要把你的一票投给此人吗？每个装置仅可投一次。')) return;
@@ -145,7 +151,7 @@ async function onVote(participantId, cardEl) {
     setTimeout(() => cardEl.classList.remove('active'), 1200);
 
     showToast('投票成功 🎉');
-    await fetchResults();
+    await fetchResults(); // reload updated results
   } catch (err) {
     console.error(err);
     localStorage.removeItem(LOCAL_VOTE_KEY);
