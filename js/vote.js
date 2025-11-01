@@ -19,20 +19,17 @@ function shortNameToInitials(name){
 }
 
 // Fetch Apps Script URL from central config.json
-async function getAppsScriptURL(){
-    try{
-        const res = await fetch('/config.json');
-        const data = await res.json();
-        if(!data.appsScriptURL){
-            showToast('未设置 Apps Script URL，请联系管理员');
-            return '';
-        }
-        return data.appsScriptURL;
-    } catch(err){
-        console.error(err);
-        showToast('无法读取配置文件');
-        return '';
-    }
+async function getAppsScriptURL() {
+  try {
+    const res = await fetch('/config.json');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    return data.appsScriptURL;
+  } catch (err) {
+    console.error(err);
+    showToast('无法取得 Apps Script URL');
+    return '';
+  }
 }
 
 let APPS_SCRIPT_URL = '';

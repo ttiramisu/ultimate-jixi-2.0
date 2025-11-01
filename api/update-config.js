@@ -1,18 +1,27 @@
 import fs from 'fs';
 import path from 'path';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { appsScriptURL, secret } = req.body;
+  const { appsScriptURL } = req.body;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
-  // Optional: simple admin auth
-  if (secret !== process.env.ADMIN_SECRET) return res.status(401).json({ error: 'Unauthorized' });
+  // check secret in headers (sent from admin page)
+  if (req.headers['x-admin-secret'] !== ADMIN_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-  if (!appsScriptURL) return res.status(400).json({ error: 'Missing URL' });
+  if (!appsScriptURL) return res.status(400).json({ error: 'Missing Apps Script URL' });
 
-  const configPath = path.join(process.cwd(), 'public', 'config.json');
-  fs.writeFileSync(configPath, JSON.stringify({ appsScriptURL }, null, 2));
+  const configPath = path.resolve('./config.json');
 
-  res.status(200).json({ status: 'ok', appsScriptURL });
+  try {
+    const config = { appsScriptURL };
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    res.status(200).json({ status: 'success', message: 'Apps Script URL saved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save config' });
+  }
 }
