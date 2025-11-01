@@ -1,28 +1,24 @@
 export default async function handler(req, res) {
-  const APPS_SCRIPT_URL = req.method === 'POST' ? req.body.appsScriptURL : req.query.appsScriptURL;
-
-  if (!APPS_SCRIPT_URL) {
-    return res.status(400).json({ error: "Missing Apps Script URL" });
-  }
+  // Hard-coded config sheet exec
+  const CONFIG_SHEET_EXEC = process.env.CONFIG_SHEET_EXEC; 
 
   try {
-    const response = await fetch(APPS_SCRIPT_URL, {
+    // Get main voting exec link
+    const configRes = await fetch(CONFIG_SHEET_EXEC);
+    const configData = await configRes.json();
+    const VOTING_EXEC = configData.execLink;
+    if(!VOTING_EXEC) return res.status(400).json({error:"Voting exec not set"});
+
+    const response = await fetch(VOTING_EXEC, {
       method: req.method,
       headers: { "Content-Type": "application/json" },
-      body: req.method === "POST" ? JSON.stringify(req.body.payload || {}) : null,
+      body: req.method==="POST"?JSON.stringify(req.body):null
     });
 
     const text = await response.text();
-
-    try {
-      const data = JSON.parse(text);
-      res.status(response.status).json(data);
-    } catch {
-      res.status(response.status).send(text);
-    }
-
-  } catch (err) {
+    res.status(response.status).send(text);
+  } catch(err) {
     console.error(err);
-    res.status(500).json({ error: "Proxy error" });
+    res.status(500).json({error:"Proxy error"});
   }
 }
