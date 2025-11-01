@@ -1,11 +1,15 @@
 export default async function handler(req, res) {
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDOJDkdABOLBlBjVhwnpNjlxh2l80oDTL3tgqo_j8gLsDgFzCds978XW7szNmML7RI/exec";
+  const APPS_SCRIPT_URL = req.method === 'POST' ? req.body.appsScriptURL : req.query.appsScriptURL;
+
+  if (!APPS_SCRIPT_URL) {
+    return res.status(400).json({ error: "Missing Apps Script URL" });
+  }
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: req.method,
       headers: { "Content-Type": "application/json" },
-      body: req.method === "POST" ? JSON.stringify(req.body) : null,
+      body: req.method === "POST" ? JSON.stringify(req.body.payload) : null,
     });
 
     const text = await response.text();
