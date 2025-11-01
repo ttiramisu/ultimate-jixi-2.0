@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hans">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>投票结果</title>
+  <link rel="stylesheet" href="css/vote-result.css">
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>投票结果</h1>
+      <p>实时显示班级投票数据</p>
+    </header>
+
+    <main>
+      <section class="qr-section">
+        <h2>扫描投票二维码</h2>
+        <canvas id="qrcode"></canvas>
+        <p id="voteUrlText"></p>
+      </section>
+
+      <section class="results-section">
+        <div id="grid" class="grid"></div>
+      </section>
+
+      <button id="refreshBtn" class="btn">刷新结果</button>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="js/vote-result.js"></script>
+</body>
+
+</html>

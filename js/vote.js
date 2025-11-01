@@ -126,7 +126,7 @@ function renderGrid(items) {
 // Handle voting (POST)
 async function onVote(participantId, cardEl) {
   if (localStorage.getItem(LOCAL_VOTE_KEY)) { showToast('此装置已投过票'); return; }
-  if (!confirm('确认要把你的一票投给此人吗？每个装置仅可投一次。')) return;
+  if (!confirm('确认要把你的一票投给此人吗？每个人仅可投一次。')) return;
 
   const appsScriptURL = getScriptURL();
   if (!appsScriptURL) return;
