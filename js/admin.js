@@ -16,10 +16,7 @@ saveURLBtn.addEventListener('click', async () => {
   try {
     const res = await fetch('/api/update-config', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-secret': '',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ appsScriptURL: url })
     });
 

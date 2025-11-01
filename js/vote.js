@@ -36,24 +36,22 @@ let APPS_SCRIPT_URL = '';
 let dataCache = [];
 
 // Fetch poll results
-async function fetchResults(){
-    if(!APPS_SCRIPT_URL) APPS_SCRIPT_URL = await getAppsScriptURL();
-    if(!APPS_SCRIPT_URL) return [];
+async function fetchResults() {
+  const url = await getAppsScriptURL();
+  if (!url) return [];
 
-    try{
-        const res = await fetch(APPS_SCRIPT_URL);
-        if(!res.ok) throw new Error(res.status);
-        const json = await res.json();
-        if(!Array.isArray(json)) { showToast('意外回应'); console.log('Unexpected response', json); return []; }
-
-        dataCache = json;
-        renderGrid(json);
-        return json;
-    } catch(err){
-        console.error(err);
-        showToast('无法读取结果');
-        return [];
-    }
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    dataCache = json;
+    renderGrid(json);
+    return json;
+  } catch (err) {
+    console.error(err);
+    showToast('无法读取结果');
+    return [];
+  }
 }
 
 // Total votes
