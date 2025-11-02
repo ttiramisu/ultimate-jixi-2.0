@@ -2,146 +2,29 @@
 <html lang="zh-Hans">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>投票</title>
-  <link rel="stylesheet" href="/css/vote.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>投票页面</title>
+  <link rel="stylesheet" href="css/vote.css">
 </head>
 
 <body>
   <div class="wrap">
     <header>
-      <h1>班级投票</h1>
+      <h1>投票页面</h1>
     </header>
+
     <main>
-      <button id="refreshBtn" class="btn">刷新结果</button>
-      <div id="grid" class="grid" style="margin-top:12px"></div>
+      <div id="grid" class="grid"></div>
     </main>
   </div>
 
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase -->
+  <script src="js/vote.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="/js/firebase-config.js"></script>
-  <script>
-    const LOCAL_VOTE_KEY = 'poll_voted_participant_id_v1';
-    const grid = document.getElementById('grid');
-    const toastEl = document.getElementById('toast');
-    const refreshBtn = document.getElementById('refreshBtn');
-
-    function showToast(msg, timeout = 2800) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t = setTimeout(() => toastEl.classList.remove('show'), timeout); }
-
-    function shortNameToInitials(name) { if (!name) return '?'; name = String(name).trim(); return name.length <= 2 ? name : name.slice(-2); }
-
-    let dataCache = [];
-    let appsExecURL = '';
-
-    async function readExecFromFirebase() {
-      try {
-        const db = firebase.database();
-        const snap = await db.ref('config/execURL').get();
-        appsExecURL = snap.exists() ? snap.val() : '';
-        if (!appsExecURL) showToast('未配置 exec 链接，请联系管理员');
-        return appsExecURL;
-      } catch (err) {
-        console.error(err);
-        showToast('无法读取配置');
-        return '';
-      }
-    }
-
-    async function fetchResults() {
-      try {
-        if (!appsExecURL) await readExecFromFirebase();
-        if (!appsExecURL) return [];
-
-        // call Apps Script doGet to read participants
-        const res = await fetch(appsExecURL);
-        if (!res.ok) throw new Error(res.status);
-        const json = await res.json();
-        // Apps Script returns { status:'success', participants: [...] }
-        const participants = Array.isArray(json.participants) ? json.participants : (Array.isArray(json) ? json : []);
-        dataCache = participants;
-        renderGrid(participants);
-        return participants;
-      } catch (err) {
-        console.error(err);
-        showToast('无法读取结果');
-        return [];
-      }
-    }
-
-    function getTotalVotes(items) { if (!Array.isArray(items)) return 0; return items.reduce((s, i) => s + (Number(i.votes) || 0), 0); }
-
-    function renderGrid(items) {
-      grid.innerHTML = '';
-      const total = Math.max(1, getTotalVotes(items));
-      const votedId = localStorage.getItem(LOCAL_VOTE_KEY);
-      items.forEach(item => {
-        const card = document.createElement('div'); card.className = 'card celebrate';
-        const meta = document.createElement('div'); meta.className = 'meta';
-        const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = shortNameToInitials(item.name);
-        const info = document.createElement('div');
-        const nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = item.name;
-        const idEl = document.createElement('div'); idEl.className = 'idsmall'; idEl.textContent = item.id;
-        info.appendChild(nameEl); info.appendChild(idEl);
-        meta.appendChild(avatar); meta.appendChild(info);
-
-        const barWrap = document.createElement('div'); barWrap.className = 'bar-wrap';
-        const bar = document.createElement('div'); bar.className = 'bar';
-        const percent = Math.round((Number(item.votes) || 0) / total * 100);
-        setTimeout(() => { bar.style.width = percent + '%'; }, 60);
-        barWrap.appendChild(bar);
-
-        const votesEl = document.createElement('div'); votesEl.className = 'votes';
-        votesEl.textContent = `${item.votes} 票 • ${percent}%`;
-
-        const btn = document.createElement('button'); btn.className = 'btn';
-        btn.textContent = votedId ? (votedId === item.id ? '已投票' : '已锁定') : '投给他';
-        btn.disabled = !!votedId;
-        btn.addEventListener('click', () => onVote(item.id, card));
-
-        card.appendChild(meta); card.appendChild(barWrap); card.appendChild(votesEl); card.appendChild(btn);
-        grid.appendChild(card);
-      });
-    }
-
-    async function onVote(participantId, cardEl) {
-      if (localStorage.getItem(LOCAL_VOTE_KEY)) { showToast('此装置已投过票'); return; }
-      if (!confirm('确认要把你的一票投给此人吗？每个装置仅可投一次。')) return;
-      try {
-        if (!appsExecURL) await readExecFromFirebase();
-        if (!appsExecURL) return;
-
-        localStorage.setItem(LOCAL_VOTE_KEY, participantId);
-        renderGrid(dataCache);
-
-        const payload = { participantId };
-        const res = await fetch(appsExecURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error(res.status);
-        const j = await res.json();
-        if (j.status !== 'success') throw new Error('服务器回应异常');
-
-        cardEl.classList.add('active'); setTimeout(() => cardEl.classList.remove('active'), 1200);
-        showToast('投票成功 🎉');
-        await fetchResults();
-      } catch (err) {
-        console.error(err);
-        localStorage.removeItem(LOCAL_VOTE_KEY);
-        renderGrid(dataCache);
-        showToast('投票失败');
-      }
-    }
-
-    refreshBtn.addEventListener('click', () => fetchResults().then(() => showToast('已更新')));
-    (async () => { showToast('正在加载结果...'); await fetchResults(); showToast('已取得结果'); })();
-  </script>
+  <script src="js/firebase-config.js"></script>
 </body>
 
 </html>

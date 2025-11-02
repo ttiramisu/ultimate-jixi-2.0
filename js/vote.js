@@ -1,7 +1,6 @@
 const LOCAL_VOTE_KEY = 'poll_voted_participant_id_v1';
 const grid = document.getElementById('grid');
 const toastEl = document.getElementById('toast');
-const refreshBtn = document.getElementById('refreshBtn');
 
 function showToast(msg, timeout = 2800) {
   toastEl.textContent = msg;
@@ -23,7 +22,6 @@ async function fetchResults() {
     const res = await fetch('/api/proxy');
     if (!res.ok) throw new Error(res.status);
     const json = await res.json();
-    if (!json || !Array.isArray(json)) throw new Error("Unexpected response");
     dataCache = json;
     renderGrid(json);
     return json;
@@ -47,31 +45,48 @@ function renderGrid(items) {
     const card = document.createElement('div');
     card.className = 'card celebrate';
 
-    const meta = document.createElement('div'); meta.className = 'meta';
-    const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = shortNameToInitials(item.name);
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = shortNameToInitials(item.name);
 
     const info = document.createElement('div');
-    const nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = item.name;
-    const idEl = document.createElement('div'); idEl.className = 'idsmall'; idEl.textContent = item.id;
+    const nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = item.name;
 
-    info.appendChild(nameEl); info.appendChild(idEl);
-    meta.appendChild(avatar); meta.appendChild(info);
+    const idEl = document.createElement('div');
+    idEl.className = 'idsmall';
+    idEl.textContent = item.id;
 
-    const barWrap = document.createElement('div'); barWrap.className = 'bar-wrap';
-    const bar = document.createElement('div'); bar.className = 'bar';
+    info.appendChild(nameEl);
+    info.appendChild(idEl);
+    meta.appendChild(avatar);
+    meta.appendChild(info);
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
     const percent = Math.round((Number(item.votes) || 0) / total * 100);
     setTimeout(() => { bar.style.width = percent + '%'; }, 60);
     barWrap.appendChild(bar);
 
-    const votesEl = document.createElement('div'); votesEl.className = 'votes';
+    const votesEl = document.createElement('div');
+    votesEl.className = 'votes';
     votesEl.textContent = `${item.votes} 票 • ${percent}%`;
 
-    const btn = document.createElement('button'); btn.className = 'btn';
+    const btn = document.createElement('button');
+    btn.className = 'btn';
     btn.textContent = votedId ? (votedId === item.id ? '已投票' : '已锁定') : '投给他';
     btn.disabled = !!votedId;
     btn.addEventListener('click', () => onVote(item.id, card));
 
-    card.appendChild(meta); card.appendChild(barWrap); card.appendChild(votesEl); card.appendChild(btn);
+    card.appendChild(meta);
+    card.appendChild(barWrap);
+    card.appendChild(votesEl);
+    card.appendChild(btn);
     grid.appendChild(card);
   });
 }
@@ -84,10 +99,13 @@ async function onVote(participantId, cardEl) {
     localStorage.setItem(LOCAL_VOTE_KEY, participantId);
     renderGrid(dataCache);
 
-    const payload = { participantId };
-    const res = await fetch('/api/proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(res.status);
+    const res = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId })
+    });
 
+    if (!res.ok) throw new Error(res.status);
     const j = await res.json();
     if (j.status !== 'success') throw new Error('服务器回应异常');
 
@@ -104,4 +122,8 @@ async function onVote(participantId, cardEl) {
   }
 }
 
-(async () => { showToast('正在加载结果...'); fetchResults().then(() => showToast('已取得结果')); })();
+(async () => {
+  showToast('正在加载结果...');
+  await fetchResults();
+  showToast('已取得结果');
+})();

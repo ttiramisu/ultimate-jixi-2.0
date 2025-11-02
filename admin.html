@@ -2,67 +2,51 @@
 <html lang="zh-Hans">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Set Exec</title>
-  <link rel="stylesheet" href="/css/admin.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>投票设置指南</title>
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 
 <body>
   <div class="wrap">
     <header>
-      <h1>Admin — 设置主投票 /exec（公开）</h1>
+      <h1>投票设置指南</h1>
+      <p>在下面输入主投票表格的 Apps Script /exec 链接</p>
     </header>
+
     <main>
       <section class="guide-section">
-        <label for="appsScriptURL">主投票 Sheets 的 Apps Script /exec URL</label>
-        <input id="appsScriptURL" type="text" placeholder="https://script.google.com/macros/s/.../exec" />
-        <button id="saveURL" class="btn">保存到 Firebase (config/execURL)</button>
-        <p style="color:#9fb0d9;margin-top:8px">注意：此 Admin 页面没有密码，任何人都可以更改 Exec 链接。</p>
+        <h2>步骤 1: 输入投票表格 exec</h2>
+        <input type="text" id="appsScriptURL" placeholder="粘贴你的 Apps Script /exec URL">
+        <button id="saveURL" class="btn">保存 URL</button>
+      </section>
+
+      <section class="guide-section">
+        <h2>步骤 2: 创建示范表格</h2>
+        <p>列标题:</p>
+        <code>ID | Name | Votes | config</code>
+        <p>示范数据:</p>
+        <textarea readonly rows="7" class="copyCode">
+ID	Name	Votes	config
+participant1	陈晓民	0	
+participant2	煮源泉	0	
+participant3	重大而	0	
+participant4	离绘画	0	
+participant5	等小艾	0	
+participant6	张丽华	0	
+        </textarea>
+        <button class="btn copyCode">点击复制示范表格</button>
       </section>
     </main>
   </div>
 
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase -->
+  <script src="js/admin.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="/js/firebase-config.js"></script>
-
-  <script>
-    const appsScriptInput = document.getElementById('appsScriptURL');
-    const saveURLBtn = document.getElementById('saveURL');
-    const toastEl = document.getElementById('toast');
-
-    function showToast(msg, timeout = 2800) {
-      toastEl.textContent = msg; toastEl.classList.add('show');
-      clearTimeout(toastEl._t); toastEl._t = setTimeout(() => toastEl.classList.remove('show'), timeout);
-    }
-
-    // Save to Realtime DB path /config/execURL
-    saveURLBtn.addEventListener('click', async () => {
-      const url = appsScriptInput.value.trim();
-      if (!url) { showToast('请输入有效 URL'); return; }
-      try {
-        const db = firebase.database();
-        await db.ref('config/execURL').set(url);
-        showToast('已保存 exec URL 到 Firebase');
-      } catch (err) {
-        console.error(err);
-        showToast('保存失败');
-      }
-    });
-
-    // Optional: load current url on page load
-    (async function loadCurrent() {
-      try {
-        const db = firebase.database();
-        const snap = await db.ref('config/execURL').get();
-        if (snap.exists()) appsScriptInput.value = snap.val();
-      } catch (e) { console.warn('无法读取当前 exec'); }
-    })();
-  </script>
+  <script src="js/firebase-config.js"></script>
 </body>
 
 </html>
